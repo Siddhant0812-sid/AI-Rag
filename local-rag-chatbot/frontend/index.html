@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyBuddy AI - Collaborative Study Hub & Shared Document Vault</title>
+  <meta name="description"
+    content="Your collaborative AI study partner with a shared document vault. Store notes, textbooks, and study materials accessible to everyone. Generate quizzes, flashcards, and concept explanations.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div class="app-layout">
+    <!-- Top Navigation Header -->
+    <header class="app-header" id="mainHeader">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">StudyBuddy <span class="brand-badge">AI</span></h1>
+          <span class="brand-subtitle">Collaborative Study Hub &bull; Shared Vault &bull; Quiz &bull; Summarize</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Pomodoro Focus Widget -->
+        <div class="pomodoro-widget" id="pomodoroWidget" title="Focus Study Timer (25m study / 5m break)">
+          <div class="pomodoro-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <span class="pomodoro-mode" id="pomodoroMode">Focus</span>
+          <span class="pomodoro-time" id="pomodoroTime">25:00</span>
+          <button id="btnPomodoroToggle" class="pomodoro-btn" title="Start/Pause Timer" aria-label="Toggle focus timer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" id="pomodoroPlayIcon">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+          <button id="btnPomodoroReset" class="pomodoro-btn" title="Reset Timer" aria-label="Reset focus timer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Network Share Link Pill -->
+        <button id="btnShareModalOpen" class="network-share-pill" title="Share StudyBuddy with anyone across the Internet or Wi-Fi">
+          <span class="share-dot"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span id="headerShareText">Public IP: <span id="headerIpText" class="header-ip">Detecting...</span></span>
+        </button>
+
+        <!-- Ollama Status Indicator -->
+        <div class="status-indicator" id="ollamaStatusPill">
+          <span class="status-dot pulsing" id="statusDot"></span>
+          <span class="status-text" id="statusText">Checking AI...</span>
+        </div>
+
+        <!-- Active Model Picker -->
+        <div class="model-picker-wrapper">
+          <label for="headerModelSelect" class="sr-only">Select Study Model</label>
+          <select id="headerModelSelect" class="model-select" title="Active Ollama Study Model">
+            <option value="qwen2.5:3b">Loading AI models...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btnOpenSettings" class="btn-ghost" title="Settings & Parameters">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-body">
+      <!-- Left Sidebar: Shared Study Library / Document Vault -->
+      <aside class="sidebar" id="studyVaultSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-group">
+            <div class="sidebar-title-row">
+              <h2 class="sidebar-title">Shared Study Library</h2>
+              <span class="counter-badge" id="docCountBadge">0 files</span>
+            </div>
+            <p class="sidebar-description">A shared document vault accessible to everyone</p>
+          </div>
+          <div class="sidebar-quick-actions">
+            <button id="btnClearAllDocs" class="btn-sm btn-danger" title="Clear all documents from vault">
+              Clear Vault
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Stored Notes</span>
+            <span class="stat-value" id="statDocCount">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Study Segments</span>
+            <span class="stat-value" id="statChunkCount">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Words</span>
+            <span class="stat-value" id="statWordCount">0</span>
+          </div>
+        </div>
+
+        <!-- Dropzone / File Ingestion -->
+        <div class="upload-section">
+          <!-- Subject Selector for Upload -->
+          <div class="upload-subject-row">
+            <label for="uploadSubjectSelect" class="upload-subject-label">Subject Tag:</label>
+            <select id="uploadSubjectSelect" class="upload-subject-select">
+              <option value="Auto">Auto-Detect</option>
+              <option value="Computer Science">💻 Computer Science</option>
+              <option value="Biology">🧬 Biology</option>
+              <option value="Physics">⚛️ Physics</option>
+              <option value="Mathematics">📐 Mathematics</option>
+              <option value="Chemistry">🧪 Chemistry</option>
+              <option value="History">📜 History</option>
+              <option value="Economics">📊 Economics</option>
+              <option value="General">🌐 General</option>
+            </select>
+          </div>
+
+          <div class="dropzone" id="uploadDropzone">
+            <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.markdown,.csv,.json"
+              class="file-input-hidden">
+            <div class="dropzone-content">
+              <div class="dropzone-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <p class="dropzone-text"><strong>Click to upload notes</strong> or drag & drop</p>
+              <span class="dropzone-formats">PDF, Markdown, TXT, CSV, JSON (All peers can read & download)</span>
+            </div>
+          </div>
+          <div class="upload-progress-container hidden" id="uploadProgressContainer">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="uploadProgressBar"></div>
+            </div>
+            <span class="progress-text" id="uploadProgressText">Processing & indexing study material...</span>
+          </div>
+        </div>
+
+        <!-- Subject Filter Pills -->
+        <div class="subject-filter-container">
+          <div class="subject-pills-row" id="subjectFilterPills" role="tablist"
+            aria-label="Filter documents by subject">
+            <button class="subject-pill active" data-subject="all">All</button>
+            <button class="subject-pill" data-subject="Computer Science">💻 CS</button>
+            <button class="subject-pill" data-subject="Biology">🧬 Bio</button>
+            <button class="subject-pill" data-subject="Physics">⚛️ Physics</button>
+            <button class="subject-pill" data-subject="Mathematics">📐 Math</button>
+            <button class="subject-pill" data-subject="General">🌐 General</button>
+          </div>
+        </div>
+
+        <!-- Filter Search Bar -->
+        <div class="filter-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input type="text" id="docFilterInput" placeholder="Filter notes or topics..." class="filter-input">
+        </div>
+
+        <!-- Documents List -->
+        <div class="doc-list-wrapper">
+          <ul class="doc-list" id="documentsList" aria-label="Shared Study Documents">
+            <!-- Populated dynamically via JS -->
+            <li class="empty-state-item">No documents in the vault yet. Upload your lecture notes, PDFs, or slides above to get started!</li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Right Panel: StudyBuddy AI Workspace -->
+      <main class="chat-workspace" id="chatWorkspace">
+        <!-- Study Controls Bar -->
+        <div class="chat-controls-bar">
+          <!-- Study Mode Tabs -->
+          <div class="study-modes-wrapper" role="radiogroup" aria-label="Study Buddy Mode">
+            <span class="study-mode-label">Mode:</span>
+            <div class="study-mode-buttons">
+              <button type="button" class="mode-btn active" data-mode="general"
+                title="Comprehensive, friendly study partner">
+                <span class="mode-icon">💬</span>
+                <span>Discuss</span>
+              </button>
+              <button type="button" class="mode-btn" data-mode="explain"
+                title="Explain concepts simply with intuitive analogies">
+                <span class="mode-icon">💡</span>
+                <span>Explain Concept</span>
+              </button>
+              <button type="button" class="mode-btn" data-mode="quiz"
+                title="Generate interactive practice quiz with explanations">
+                <span class="mode-icon">📝</span>
+                <span>Quiz Me</span>
+              </button>
+              <button type="button" class="mode-btn" data-mode="flashcards" title="Generate Q&A study flashcards">
+                <span class="mode-icon">📇</span>
+                <span>Flashcards</span>
+              </button>
+              <button type="button" class="mode-btn" data-mode="summarize"
+                title="High-yield revision sheet & exam traps">
+                <span class="mode-icon">📑</span>
+                <span>Summarize</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Study Scope & Actions -->
+          <div class="study-scope-actions">
+            <div class="focus-doc-badge hidden" id="focusDocBadge"
+              title="StudyBuddy is currently focused on this specific document">
+              <span class="focus-icon">🎯</span>
+              <span class="focus-text" id="focusDocName">Doc</span>
+              <button type="button" id="btnResetFocusDoc" class="focus-close-btn"
+                title="Clear document focus to study from all notes">&times;</button>
+            </div>
+
+            <div class="rag-toggle-wrapper">
+              <label class="switch" for="ragToggle" title="Toggle referencing shared study library">
+                <input type="checkbox" id="ragToggle" checked>
+                <span class="slider round"></span>
+              </label>
+              <span class="toggle-title" id="ragToggleTitle">Library Grounding: <span
+                  class="highlight-green">ON</span></span>
+            </div>
+
+            <button id="btnClearChat" class="btn-ghost btn-sm" title="Clear conversation history">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Scroll Container -->
+        <div class="chat-messages-container" id="chatMessages">
+          <!-- Welcome Hero Screen -->
+          <div class="welcome-hero" id="welcomeHero">
+            <div class="welcome-icon-glow">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+              </svg>
+            </div>
+            <h2 class="welcome-title">Your AI Study Buddy & Shared Document Hub</h2>
+            <p class="welcome-subtitle">
+              Store notes, textbooks, and past papers in the shared library on the left. Everyone on your Wi-Fi can
+              access, read, and download them. Ask me anything, or let's quiz, summarize, and master tough concepts
+              together!
+            </p>
+
+            <div class="sample-queries-grid">
+              <button class="sample-query-card"
+                data-query="Create a 3-question practice quiz based on our uploaded study notes."
+                data-mode="quiz">
+                <span class="card-icon">📝</span>
+                <span class="card-text">"Create a 3-question practice quiz"</span>
+              </button>
+              <button class="sample-query-card"
+                data-query="Explain a challenging concept using an intuitive real-world analogy."
+                data-mode="explain">
+                <span class="card-icon">💡</span>
+                <span class="card-text">"Explain a difficult concept with an analogy"</span>
+              </button>
+              <button class="sample-query-card"
+                data-query="Summarize the core takeaways, formulas, and common exam traps from our notes." data-mode="summarize">
+                <span class="card-icon">📑</span>
+                <span class="card-text">"Summarize key takeaways & exam traps"</span>
+              </button>
+              <button class="sample-query-card"
+                data-query="Generate high-yield study flashcards for important definitions and terms."
+                data-mode="flashcards">
+                <span class="card-icon">📇</span>
+                <span class="card-text">"Generate flashcards for definitions & terms"</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="chat-input-wrapper">
+          <!-- Quick action chips -->
+          <div class="quick-prompts-bar">
+            <span class="quick-prompt-label">Quick Prompts:</span>
+            <button type="button" class="quick-chip" data-prefix="Quiz me on ">📝 Practice Quiz</button>
+            <button type="button" class="quick-chip" data-prefix="Explain the concept of ">💡 Explain Concept</button>
+            <button type="button" class="quick-chip" data-prefix="Create study flashcards for ">📇 Flashcards</button>
+            <button type="button" class="quick-chip" data-prefix="Provide a revision summary of ">📑 Summarize</button>
+          </div>
+
+          <form class="chat-input-form" id="chatForm">
+            <div class="input-actions-left">
+              <button type="button" id="btnQuickUpload" class="btn-input-action"
+                title="Upload notes directly to shared library">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                  </path>
+                </svg>
+              </button>
+            </div>
+
+            <textarea id="messageInput" rows="1"
+              placeholder="Ask your Study Buddy anything, or ask to quiz/explain... (Enter to send, Shift+Enter for newline)"
+              required></textarea>
+
+            <div class="input-actions-right">
+              <button type="button" id="btnStopGeneration" class="btn-stop hidden" title="Stop generating">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                </svg>
+              </button>
+              <button type="submit" id="btnSendMessage" class="btn-send" title="Send message">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </form>
+          <div class="input-footer-hints">
+            <span class="hint-item"><kbd>Enter</kbd> to Send</span>
+            <span class="hint-item"><kbd>Shift + Enter</kbd> for Newline</span>
+            <span class="hint-item" id="footerActiveModel">Study Model: Ollama Local</span>
+            <span class="hint-item" id="footerStudyMode">Mode: Discuss</span>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal: Document Reader / Preview (Accessible Native Dialog) -->
+    <dialog class="modal-dialog modal-xl" id="readerModal" closedby="any">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="reader-header-info">
+            <div class="reader-title-badge-row">
+              <span class="subject-badge" id="readerSubjectBadge">Computer Science</span>
+              <h3 class="modal-title" id="readerDocTitle">Document Title</h3>
+            </div>
+            <div class="reader-meta-row">
+              <span id="readerDocStats">0 words &bull; 0 KB</span>
+              <span class="reader-sep">&bull;</span>
+              <span id="readerDocDate">Uploaded</span>
+            </div>
+          </div>
+          <div class="reader-header-actions">
+            <a id="btnReaderDownload" class="btn-sm btn-accent" download title="Download original file to your device">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download</span>
+            </a>
+            <button type="button" id="btnReaderStudyThis" class="btn-sm btn-primary"
+              title="Focus StudyBuddy on this document">
+              <span>🎯 Study This</span>
+            </button>
+            <button type="button" class="modal-close-btn" id="btnCloseReaderModal"
+              aria-label="Close reader">&times;</button>
+          </div>
+        </div>
+        <div class="modal-body modal-scrollable">
+          <div class="reader-search-bar">
+            <input type="text" id="readerSearchInput" placeholder="Find inside this document..." class="form-control">
+          </div>
+          <div class="reader-content-body" id="readerContentBody">
+            <!-- Full document text rendered here -->
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Modal: Share with Study Group & Public Internet -->
+    <dialog class="modal-dialog modal-lg" id="shareModal" closedby="any">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">🌐 Share StudyBuddy with Everyone</h3>
+            <span class="modal-subtitle">Share your document vault and AI study partner across the internet or local network</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="btnCloseShareModal"
+            aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- Share Navigation Tabs -->
+          <div class="share-tabs-nav">
+            <button type="button" class="share-tab-btn active" data-tab="tabPublicIp">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              Public IP (Direct Internet)
+            </button>
+            <button type="button" class="share-tab-btn" data-tab="tabTunnel">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Instant Tunnel (Zero Router Setup)
+            </button>
+            <button type="button" class="share-tab-btn" data-tab="tabLocalWifi">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+              </svg>
+              Local Wi-Fi (Same Network)
+            </button>
+          </div>
+
+          <!-- Tab 1: Public Internet / WAN IP -->
+          <div class="share-tab-panel active" id="tabPublicIp">
+            <p class="share-instructions">
+              Send this <strong>Public Internet URL</strong> to friends anywhere in the world to access your shared vault and study AI:
+            </p>
+            <div class="share-url-box">
+              <input type="text" id="publicShareUrlInput" readonly class="share-url-input" value="Detecting public IP...">
+              <button type="button" id="btnCopyPublicUrl" class="btn-primary">
+                <span id="copyPublicBtnText">Copy Link</span>
+              </button>
+            </div>
+
+            <div class="share-info-card">
+              <div class="info-card-header">
+                <span class="info-badge">Required for Direct Public IP</span>
+                <h4>Router Port Forwarding Setup (Port 8000)</h4>
+              </div>
+              <p class="info-text">
+                Because home internet routers use NAT firewalls, traffic to your public IP must be forwarded to this host PC:
+              </p>
+              <div class="port-forward-summary">
+                <div class="pf-item">
+                  <span class="pf-label">Your Public IP</span>
+                  <span class="pf-val" id="summaryPublicIp">Detecting...</span>
+                </div>
+                <div class="pf-item">
+                  <span class="pf-label">PC's Local IP</span>
+                  <span class="pf-val" id="summaryLocalIp">192.168.1.8</span>
+                </div>
+                <div class="pf-item">
+                  <span class="pf-label">Port to Forward</span>
+                  <span class="pf-val">8000 (TCP)</span>
+                </div>
+              </div>
+              <ol class="setup-steps">
+                <li>Log in to your Wi-Fi router admin page (usually <a href="http://192.168.1.1" target="_blank" rel="noopener">http://192.168.1.1</a> or <a href="http://192.168.0.1" target="_blank" rel="noopener">http://192.168.0.1</a>).</li>
+                <li>Navigate to <strong>Port Forwarding</strong> / <strong>Virtual Server</strong> settings.</li>
+                <li>Add rule: <strong>External Port 8000</strong> &rarr; <strong>Internal IP <code id="guideLocalIp">192.168.1.8</code></strong> &rarr; <strong>Internal Port 8000</strong> (Protocol: TCP).</li>
+                <li>Save and anyone on the internet can visit your public link!</li>
+              </ol>
+              <div class="info-note">
+                💡 <em>Don't have access to your router admin panel? Switch to the <strong>Instant Tunnel</strong> tab above for a 1-command public link that bypasses router setup entirely.</em>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Zero-Config Instant Tunnel -->
+          <div class="share-tab-panel" id="tabTunnel">
+            <p class="share-instructions">
+              No router setup or port forwarding required! Run one command in your PowerShell terminal to generate an instant, secure public HTTPS link that works worldwide:
+            </p>
+
+            <div class="tunnel-option-card">
+              <div class="tunnel-header">
+                <div>
+                  <h4>Option 1: Pinggy Tunnel (Zero Installation - Built into Windows)</h4>
+                  <p class="tunnel-sub">Uses standard Windows SSH. Gives you an immediate public HTTPS URL.</p>
+                </div>
+                <button type="button" class="btn-sm btn-accent" id="btnCopyPinggyCmd">Copy Command</button>
+              </div>
+              <pre class="code-block"><code id="pinggyCmdText">ssh -p 443 -R0:localhost:8000 a.pinggy.io</code></pre>
+            </div>
+
+            <div class="tunnel-option-card">
+              <div class="tunnel-header">
+                <div>
+                  <h4>Option 2: Cloudflare Quick Tunnel (Free & Unlimited)</h4>
+                  <p class="tunnel-sub">If you have <code class="inline-code">cloudflared</code> installed, create a fast worldwide tunnel:</p>
+                </div>
+                <button type="button" class="btn-sm btn-accent" id="btnCopyCloudflaredCmd">Copy Command</button>
+              </div>
+              <pre class="code-block"><code id="cloudflaredCmdText">cloudflared tunnel --url http://localhost:8000</code></pre>
+            </div>
+
+            <div class="tunnel-option-card">
+              <div class="tunnel-header">
+                <div>
+                  <h4>Option 3: Ngrok</h4>
+                  <p class="tunnel-sub">Standard ngrok HTTP forwarding:</p>
+                </div>
+                <button type="button" class="btn-sm btn-accent" id="btnCopyNgrokCmd">Copy Command</button>
+              </div>
+              <pre class="code-block"><code id="ngrokCmdText">ngrok http 8000</code></pre>
+            </div>
+          </div>
+
+          <!-- Tab 3: Local Wi-Fi (LAN) -->
+          <div class="share-tab-panel" id="tabLocalWifi">
+            <p class="share-instructions">
+              Anyone connected to your <strong>same home or campus Wi-Fi</strong> can open this link in their phone, tablet, or laptop browser with zero setup:
+            </p>
+            <div class="share-url-box">
+              <input type="text" id="localShareUrlInput" readonly class="share-url-input" value="http://localhost:8000">
+              <button type="button" id="btnCopyLocalUrl" class="btn-primary">
+                <span id="copyLocalBtnText">Copy Link</span>
+              </button>
+            </div>
+            <div class="share-tips-card">
+              <h4>💡 How to use with friends on the same Wi-Fi:</h4>
+              <ol>
+                <li>Make sure their phone/laptop is connected to your same Wi-Fi network.</li>
+                <li>Send them the link above.</li>
+                <li>They can instantly view notes, download files, and study together with the AI!</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Modal: Settings & Configuration -->
+    <dialog class="modal-dialog modal-lg" id="settingsModal" closedby="any">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">AI Models & API Configuration</h3>
+            <span class="modal-subtitle">Configure Local Ollama and Cloud Models (Gemini, ChatGPT, Claude)</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="btnCloseSettings"
+            aria-label="Close settings">&times;</button>
+        </div>
+        <div class="modal-body modal-scrollable">
+          <!-- Active Model & Hyperparameters -->
+          <div class="settings-section">
+            <h4 class="section-title">Active Model & Pacing</h4>
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="modalModelSelect" class="form-label">Active AI Model</label>
+                <select id="modalModelSelect" class="form-control">
+                  <!-- Populated dynamically with optgroups -->
+                </select>
+              </div>
+              <div class="form-group half">
+                <label for="temperatureInput" class="form-label">Creativity / Temperature: <span
+                    id="tempValueDisplay">0.7</span></label>
+                <input type="range" id="temperatureInput" min="0.0" max="1.0" step="0.05" value="0.7"
+                  class="slider-control">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="topKInput" class="form-label">Reference Notes Chunks: <span
+                    id="topKDisplay">4</span></label>
+                <input type="range" id="topKInput" min="1" max="10" step="1" value="4" class="slider-control">
+              </div>
+              <div class="form-group half">
+                <label for="thresholdInput" class="form-label">Relevance Threshold: <span
+                    id="thresholdDisplay">0.05</span></label>
+                <input type="range" id="thresholdInput" min="0.00" max="0.50" step="0.01" value="0.05"
+                  class="slider-control">
+              </div>
+            </div>
+          </div>
+
+          <!-- Cloud AI Providers Configuration -->
+          <div class="settings-section">
+            <h4 class="section-title">☁️ Cloud AI Providers (Gemini, ChatGPT, Claude)</h4>
+            <p class="section-desc">Add API keys to use Google Gemini, OpenAI, or Anthropic Claude alongside local
+              Ollama.</p>
+
+            <div class="cloud-providers-grid">
+              <!-- Google Gemini -->
+              <div class="provider-config-card">
+                <div class="provider-card-header">
+                  <span class="provider-card-name">🌟 Google Gemini</span>
+                  <span class="provider-status-badge" id="geminiStatusBadge">Not Configured</span>
+                </div>
+                <div class="form-group">
+                  <label for="geminiApiKeyInput" class="form-label">Gemini API Key</label>
+                  <div class="input-with-button">
+                    <input type="password" id="geminiApiKeyInput" class="form-control"
+                      placeholder="AIzaSy... (Get free key from aistudio.google.com)">
+                    <button type="button" id="btnTestGemini" class="btn-sm btn-accent">Test Key</button>
+                  </div>
+                  <span class="form-helper" id="geminiTestFeedback">⚡ Ultra-fast: Gemini 3.5 Flash-Lite (1.2s) & 3.5 Flash with auto-fallback</span>
+                </div>
+              </div>
+
+              <!-- OpenAI ChatGPT -->
+              <div class="provider-config-card">
+                <div class="provider-card-header">
+                  <span class="provider-card-name">⚡ OpenAI (ChatGPT)</span>
+                  <span class="provider-status-badge" id="openaiStatusBadge">Not Configured</span>
+                </div>
+                <div class="form-group">
+                  <label for="openaiApiKeyInput" class="form-label">OpenAI API Key</label>
+                  <div class="input-with-button">
+                    <input type="password" id="openaiApiKeyInput" class="form-control"
+                      placeholder="sk-proj-... (platform.openai.com)">
+                    <button type="button" id="btnTestOpenAI" class="btn-sm btn-accent">Test Key</button>
+                  </div>
+                  <span class="form-helper" id="openaiTestFeedback">Requires active credit balance at platform.openai.com</span>
+                </div>
+                <div class="form-group">
+                  <label for="openaiBaseUrlInput" class="form-label">Base URL (Optional)</label>
+                  <input type="text" id="openaiBaseUrlInput" class="form-control"
+                    placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1">
+                  <span class="form-helper">Compatible with Groq (https://api.groq.com/openai/v1), OpenRouter, DeepSeek</span>
+                </div>
+              </div>
+
+              <!-- Anthropic Claude -->
+              <div class="provider-config-card">
+                <div class="provider-card-header">
+                  <span class="provider-card-name">🧠 Anthropic Claude</span>
+                  <span class="provider-status-badge" id="anthropicStatusBadge">Not Configured</span>
+                </div>
+                <div class="form-group">
+                  <label for="anthropicApiKeyInput" class="form-label">Anthropic API Key</label>
+                  <div class="input-with-button">
+                    <input type="password" id="anthropicApiKeyInput" class="form-control"
+                      placeholder="sk-ant-... (console.anthropic.com)">
+                    <button type="button" id="btnTestAnthropic" class="btn-sm btn-accent">Test Key</button>
+                  </div>
+                  <span class="form-helper" id="anthropicTestFeedback">Supports Claude 3.5 Sonnet, Claude 3.5 Haiku</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Local Ollama Configuration -->
+          <div class="settings-section">
+            <h4 class="section-title">🏠 Local Ollama Server</h4>
+            <div class="form-group">
+              <label for="ollamaUrlInput" class="form-label">Ollama Endpoint URL</label>
+              <div class="input-with-button">
+                <input type="text" id="ollamaUrlInput" value="http://localhost:11434" class="form-control">
+                <button type="button" id="btnTestOllama" class="btn-sm btn-accent">Test Connection</button>
+              </div>
+              <span class="form-helper" id="ollamaTestFeedback">Local Ollama instance running on this machine</span>
+            </div>
+          </div>
+
+          <!-- Custom Persona Instructions -->
+          <div class="settings-section">
+            <h4 class="section-title">StudyBuddy Custom Persona Instructions</h4>
+            <div class="form-group">
+              <textarea id="systemPromptInput" rows="3" class="form-control"
+                placeholder="Optional custom instructions to guide the study buddy's tone, pacing, or explanations..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" id="btnResetSettings">Reset Defaults</button>
+          <button type="button" class="btn-primary" id="btnSaveSettings">Save All Settings</button>
+        </div>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- CDN scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

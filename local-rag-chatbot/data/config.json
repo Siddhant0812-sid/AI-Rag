@@ -1,0 +1,7 @@
+{
+  "ollama_url": "http://localhost:11434",
+  "gemini_api_key": "",
+  "openai_api_key": "",
+  "openai_base_url": "https://api.openai.com/v1",
+  "anthropic_api_key": ""
+}
